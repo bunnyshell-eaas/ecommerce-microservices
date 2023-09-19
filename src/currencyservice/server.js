@@ -27,26 +27,30 @@ else {
   });
 }
 
+// Register GRPC OTel Instrumentation for trace propagation
+// regardless of whether tracing is emitted.
+const { GrpcInstrumentation } = require('@opentelemetry/instrumentation-grpc');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-if(process.env.DISABLE_TRACING) {
-  console.log("Tracing disabled.")
-}
-else {
+registerInstrumentations({
+  instrumentations: [new GrpcInstrumentation()]
+});
+
+if(process.env.ENABLE_TRACING == "1") {
   console.log("Tracing enabled.")
-  require('@google-cloud/trace-agent').start();
-}
+  const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+  const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+  const { OTLPTraceExporter } = require("@opentelemetry/exporter-otlp-grpc");
 
-if(process.env.DISABLE_DEBUGGER) {
-  console.log("Debugger disabled.")
+  const provider = new NodeTracerProvider();
+  
+  const collectorUrl = process.env.COLLECTOR_SERVICE_ADDR
+
+  provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter({url: collectorUrl})));
+  provider.register();
 }
 else {
-  console.log("Debugger enabled.")
-  require('@google-cloud/debug-agent').start({
-    serviceContext: {
-      service: 'currencyservice',
-      version: 'VERSION'
-    }
-  });
+  console.log("Tracing disabled.")
 }
 
 const path = require('path');
@@ -65,8 +69,11 @@ const healthProto = _loadProto(HEALTH_PROTO_PATH).grpc.health.v1;
 const logger = pino({
   name: 'currencyservice-server',
   messageKey: 'message',
-  changeLevelName: 'severity',
-  useLevelLabels: true
+  formatters: {
+    level (logLevelString, logLevelNum) {
+      return { severity: logLevelString }
+    }
+  }
 });
 
 /**
@@ -170,7 +177,7 @@ function main () {
   server.addService(healthProto.Health.service, {check});
 
   server.bindAsync(
-    `0.0.0.0:${PORT}`,
+    `[::]:${PORT}`,
     grpc.ServerCredentials.createInsecure(),
     function() {
       logger.info(`CurrencyService gRPC server started on port ${PORT}`);

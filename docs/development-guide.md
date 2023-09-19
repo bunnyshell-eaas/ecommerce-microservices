@@ -1,28 +1,26 @@
 # Development Guide 
 
-This doc explains how to build and run the OnlineBoutique source code locally using the `skaffold` command-line tool.  
+This doc explains how to build and run the Online Boutique source code locally using the `skaffold` command-line tool.  
 
-## Prerequisites 
+## Prerequisites
 
-- [Docker for Desktop](https://www.docker.com/products/docker-desktop).
-- kubectl (can be installed via `gcloud components install kubectl`)
-- [skaffold **1.27+**](https://skaffold.dev/docs/install/) (latest version recommended), a tool that builds and deploys Docker images in bulk. 
-- A Google Cloud Project with Google Container Registry enabled. 
-- Enable GCP APIs for Cloud Monitoring, Tracing, Debugger, Profiler:
-```
-gcloud services enable monitoring.googleapis.com \
-    cloudtrace.googleapis.com \
-    clouddebugger.googleapis.com \
-    cloudprofiler.googleapis.com
-```
-- [Minikube](https://minikube.sigs.k8s.io/docs/start/) (optional - see Local Cluster)
-- [Kind](https://kind.sigs.k8s.io/) (optional - see Local Cluster)
+- [Docker for Desktop](https://www.docker.com/products/docker-desktop)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) (can be installed via `gcloud components install kubectl` for Option 1 - GKE)
+- [skaffold **2.0.2+**](https://skaffold.dev/docs/install/) (latest version recommended), a tool that builds and deploys Docker images in bulk. 
+- Clone the repository.
+    ```sh
+    git clone https://github.com/GoogleCloudPlatform/microservices-demo
+    cd microservices-demo/
+    ```
+- A Google Cloud project with Google Container Registry enabled. (for Option 1 - GKE)
+- [Minikube](https://minikube.sigs.k8s.io/docs/start/) (optional for Option 2 - Local Cluster)
+- [Kind](https://kind.sigs.k8s.io/) (optional for Option 2 - Local Cluster)
 
 ## Option 1: Google Kubernetes Engine (GKE)
 
-> 💡 Recommended if you're using Google Cloud Platform and want to try it on
+> 💡 Recommended if you're using Google Cloud and want to try it on
 > a realistic cluster. **Note**: If your cluster has Workload Identity enabled, 
-> [see these instructions](/docs/workload-identity.md)
+> [see these instructions](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#enable)
 
 1.  Create a Google Kubernetes Engine cluster and make sure `kubectl` is pointing
     to the cluster.
@@ -72,6 +70,7 @@ gcloud services enable monitoring.googleapis.com \
 
         kubectl get service frontend-external
 
+5.  Navigate to `http://EXTERNAL-IP` to access the web frontend.
 
 ## Option 2 - Local Cluster 
 
@@ -106,21 +105,10 @@ gcloud services enable monitoring.googleapis.com \
 
 4. Run `kubectl get pods` to verify the Pods are ready and running.
 
-5. Access the web frontend through your browser
-    - **Minikube** requires you to run a command to access the frontend service:
+5. Run `kubectl port-forward deployment/frontend 8080:8080` to forward a port to the frontend service.
 
-    ```shell
-    minikube service frontend-external
-    ```
+6. Navigate to `localhost:8080` to access the web frontend.
 
-    - **Docker For Desktop** should automatically provide the frontend at http://localhost:80
-
-    - **Kind** does not provision an IP address for the service.
-      You must run a port-forwarding process to access the frontend at http://localhost:8080:
-
-    ```shell
-    kubectl port-forward deployment/frontend 8080:8080
-    ```
 
 ## Cleanup
 
