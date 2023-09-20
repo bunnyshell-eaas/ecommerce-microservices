@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    alb.ingress.kubernetes.io/target-type: ip
+    nginx.ingress.kubernetes.io/use-regex: "true"
+  generation: 1
+  name: xalex-bns-nginx-ingress
+spec:
+  ingressClassName: bns-nginx
+  rules:
+  - host: FRONTEND_HOST
+    http:
+      paths:
+      - backend:
+          service:
+            name: frontend
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
